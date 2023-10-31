@@ -1,8 +1,9 @@
-import { IpcRendererEvent, contextBridge, ipcRenderer } from 'electron'
+import { IpcRendererEvent, contextBridge, ipcRenderer, shell } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { ExtraConfig} from "../main/Globals";
 import { Stream } from "socketmost/dist/modules/Messages";
 
+    const exec = require('child_process').exec;
 type ApiCallback = (event: IpcRendererEvent, ...args: any[]) => void
 
 export interface Api {
@@ -12,9 +13,14 @@ export interface Api {
   saveSettings: (settings: ExtraConfig) => void
   stream: (stream: Stream) =>  void
   quit: () =>  void
+  shutdown:()=>void
 }
 
-
+function execute(command, callback) {
+  exec(command, (error, stdout, stderr) => { 
+      callback(stdout); 
+  });
+};
 
 // Custom APIs for renderer
 const api: Api = {
@@ -23,7 +29,13 @@ const api: Api = {
   getSettings: () => ipcRenderer.send('getSettings'),
   saveSettings: (settings: ExtraConfig) => ipcRenderer.send('saveSettings', settings),
   stream: (stream: Stream) => ipcRenderer.send('startStream', stream),
-  quit: () => ipcRenderer.send('quit')
+  quit: () => ipcRenderer.send('quit'),
+  shutdown:()=>{
+    execute('shutdown now', (output) => {
+      console.log(output);
+  });
+
+  }
 }
 
 try {
